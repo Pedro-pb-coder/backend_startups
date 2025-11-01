@@ -7,3 +7,7 @@ venv/
 *.sql
 
 startups_data.csv
+
+docker-compose.yml
+
+import_data.py
