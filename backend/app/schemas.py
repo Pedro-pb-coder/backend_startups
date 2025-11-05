@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, EmailStr, field_validator, HttpUrl, constr
+from pydantic import BaseModel, Field, EmailStr, field_validator, HttpUrl, constr,  AnyHttpUrl
 import re
 from typing import Optional
 
@@ -66,7 +66,80 @@ class Empresa(BaseModel):
     link_video: Optional[str] = None
     telefone_contato: Optional[str] = None   
 
+    @field_validator('telefone_contato')
+    def validate_telefone(cls, v):
+        """Valida o formato do telefone (99) 99999-9999."""
+        if v is None:
+            return v  # Permite valores nulos
+        
+        # Regex para (99) 99999-9999
+        regex_telefone = r'^\(\d{2}\)\s\d{5}-\d{4}$'
+        
+        if not re.match(regex_telefone, v):
+            raise ValueError('O telefone deve estar no formato (99) 99999-9999')
+        return v
+    
+
+    @field_validator('link_video')
+    def validate_video_url(cls, v):
+        if v is None:
+            return v  # Permite valores nulos
+
+        try:
+            # validar se é uma URL HTTP/HTTPS válida
+            url = AnyHttpUrl(v)
+        except Exception:
+            raise ValueError(f'"{v}" não é uma URL válida.')
+
+        # Pega o host (ex: 'www.youtube.com', 'youtu.be')
+        host = url.host or ""
+        
+        allowed_hosts = [
+            'youtube.com', 
+            'www.youtube.com', 
+            'youtu.be', 
+            'vimeo.com', 
+            'www.vimeo.com', 
+            'loom.com', 
+            'www.loom.com'
+        ]
+        
+        # Verifica se o host termina com um dos domínios permitidos
+        if not any(host.endswith(allowed) for allowed in allowed_hosts):
+             raise ValueError('A URL do vídeo deve ser do YouTube, Vimeo ou Loom')
+        
+        return v  # Retorna a string original
+    
+
+    @field_validator('link_apresentacao')
+    def validate_presentation_link(cls, v):
+        """Valida apresentação (.pdf, .ppt, .pptx, GDrive, OneDrive)."""
+        if v is None:
+            return v  # Permite valores nulos
+
+        v_lower = v.lower()
+
+        # 1. Se não for extensão, checar se é uma URL de nuvem válida
+        try:
+            url = AnyHttpUrl(v)
+            host = url.host or ""
+            allowed_domains = ['drive.google.com', 'onedrive.live.com']
+            
+            if any(domain in host for domain in allowed_domains):
+                return v
+        except Exception:
+            # Não é uma URL válida, e também não termina com a extensão correta
+            pass 
+    
+            # 2. Checar extensões de arquivo permitidas
+        allowed_extensions = ['.pdf', '.ppt', '.pptx']
+        if any(v_lower.endswith(ext) for ext in allowed_extensions):
+            return v
+
+        # 3. Se não passou em nenhum, falha
+        raise ValueError('O link da apresentação deve ser um .pdf, .ppt, .pptx, Google Drive ou OneDrive')
+
     class Config:
         from_attributes = True
 
-    # --- SCHEMAS PARA OS ENDPOINTS ---
+    

@@ -54,3 +54,5 @@ class Usuario:
     id: Mapped[int] = mapped_column(primary_key=True, index=True, init=False)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     senha_hash: Mapped[str] = mapped_column(String(255))
+
+    
