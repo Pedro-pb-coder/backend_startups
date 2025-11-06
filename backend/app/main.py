@@ -12,10 +12,24 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from contextlib import asynccontextmanager
 
+# --- para StaticFiles ---
+import os
+from fastapi.staticfiles import StaticFiles
+
+# -----
+
 from .search_engine import SearchEngine
-from .database import engine, Base, get_db
-from . import models, security, schemas
+from .database import engine,  get_db, table_registry # Base,
+from . import models, security, schemas, upload_router, crud
 from .schemas import UserLogin
+
+# --- ADICIONADO: Configuração do Diretório Estático ---
+# Deve corresponder ao STATIC_DIR no upload_router.py
+STATIC_DIR = "static"
+# Garante que o diretório base exista
+os.makedirs(STATIC_DIR, exist_ok=True)
+# --- FIM ADICIONADO ---
+
 
 search_engine_instance: Optional[SearchEngine] = None
 
@@ -29,11 +43,13 @@ async def lifespan(app: FastAPI):
         nltk.download('punkt', quiet=True) 
         nltk.download('stopwords', quiet=True)
         nltk.download('rslp', quiet=True) 
-        
         print("Recursos do NLTK prontos com sucesso!")
         
         db = next(get_db())
-        all_companies_list = db.query(models.Empresa).all()
+
+        # USANDO CRUD
+        all_companies_list = crud.get_all_empresas(db)
+        #all_companies_list = db.query(models.Empresa).all()
         
         if all_companies_list:
             search_engine_instance = SearchEngine(all_companies_list)
@@ -45,7 +61,7 @@ async def lifespan(app: FastAPI):
 
     print("Iniciando a criação das tabelas do banco de dados...")
     try:
-        models.Base.metadata.create_all(bind=engine)
+        table_registry.metadata.create_all(bind=engine)
         print("Banco de dados e tabelas criadas com sucesso!")
     except Exception as e:
         print(f"Erro na criação das tabelas do BD: {e}")
@@ -56,18 +72,26 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="API de Pesquisa de Startups", lifespan=lifespan)
 
+# --- Montar Roteadores ---
+app.include_router(upload_router.router, tags=["Uploads"])
+
 
 @app.post("/register", response_model=schemas.Token)
 def register_user(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
-    db_user = db.query(models.Usuario).filter(models.Usuario.email == user_data.email).first()
+    # Lógica de banco de dados movida para crud.py
+    db_user = crud.get_user_by_email(db, email=user_data.email)
+    #db_user = db.query(models.Usuario).filter(models.Usuario.email == user_data.email).first()
+
     if db_user:
         raise HTTPException(status_code=400, detail="E-mail já cadastrado.")
-    
-    hashed_password = security.hash_password(user_data.password)
-    new_user = models.Usuario(email=user_data.email, senha_hash=hashed_password)
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
+    # Lógica de banco de dados movida para crud.py
+    new_user = crud.create_user(db=db, user=user_data)
+
+    #hashed_password = security.hash_password(user_data.password)
+    #new_user = models.Usuario(email=user_data.email, senha_hash=hashed_password)
+    #db.add(new_user)
+    #db.commit()
+    #db.refresh(new_user)
     
     access_token = security.create_access_token(data={"sub": new_user.email})
     return {"access_token": access_token, "token_type": "bearer"}
@@ -75,7 +99,11 @@ def register_user(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
 
 @app.post("/token/json", response_model=schemas.Token)
 def login_with_json(user_data: UserLogin, db: Session = Depends(get_db)):
-    user = db.query(models.Usuario).filter(models.Usuario.email == user_data.email).first()
+
+    # Lógica de banco de dados movida para crud.py
+    user = crud.get_user_by_email(db, email=user_data.email)
+    #user = db.query(models.Usuario).filter(models.Usuario.email == user_data.email).first()
+
     if not user or not security.verify_password(user_data.password, user.senha_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -88,7 +116,11 @@ def login_with_json(user_data: UserLogin, db: Session = Depends(get_db)):
 
 @app.post("/token", response_model=schemas.Token)
 def login_with_form(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = db.query(models.Usuario).filter(models.Usuario.email == form_data.username).first()
+
+    # Lógica de banco de dados movida para crud.py
+    user = crud.get_user_by_email(db, email=form_data.username)
+    #user = db.query(models.Usuario).filter(models.Usuario.email == form_data.username).first()
+
     if not user or not security.verify_password(form_data.password, user.senha_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -104,7 +136,9 @@ def list_all_companies(
     db: Session = Depends(get_db),
     current_user: schemas.User = Depends(security.get_current_user)
 ):
-    results = db.query(models.Empresa).all()
+    # Lógica de banco de dados movida para crud.py
+    results = crud.get_all_empresas(db)
+    #results = db.query(models.Empresa).all()
     if not results:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Nenhuma empresa encontrada no sistema.")
     return results
@@ -134,7 +168,9 @@ def optimized_search_companies(
     
     return results
 
-# # if __name__ == "__main__":
-# #     uvicorn.run("backend.app.main:app", host="127.0.0.1", port=8000, reload=True)
 
-# primeira alteração -
+# --- ADICIONADO: Montar o diretório estático ---
+
+app.mount(f"/{STATIC_DIR}", StaticFiles(directory=STATIC_DIR), name="static")
+
+## http://127.0.0.1:8000/docs

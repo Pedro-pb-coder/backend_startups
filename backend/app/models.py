@@ -1,17 +1,21 @@
 from sqlalchemy import Column, Integer, String, Text, BigInteger
 from sqlalchemy.orm import Mapped, mapped_column, registry
+from sqlalchemy.types import Integer 
 #from .database import Base
 from .database import table_registry
 
+# --- CORREÇÃO DE COMPATIBILIDADE (SQLite/PostgreSQL) ---
+
+PG_BIGINT = BigInteger().with_variant(Integer, "sqlite")
 
 #table_registry = registry()
 
 @table_registry.mapped_as_dataclass
 class Empresa:
     __tablename__ = "startups"
-    __table_args__ = {'schema': 'public'}
+    #__table_args__ = {'schema': 'public'}
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, index=True, init=False)
+    id: Mapped[int] = mapped_column(PG_BIGINT, primary_key=True, index=True, init=False)
     nome_da_empresa: Mapped[str] = mapped_column(String(255), index=True)
     endereco: Mapped[str] = mapped_column("endereço")
     cnpj: Mapped[str] = mapped_column(String(18), unique=True, index=True)
@@ -49,7 +53,7 @@ class Empresa:
 @table_registry.mapped_as_dataclass
 class Usuario:
     __tablename__ = "usuarios"
-    __table_args__ = {'schema': 'public'}
+    #__table_args__ = {'schema': 'public'}
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True, init=False)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)

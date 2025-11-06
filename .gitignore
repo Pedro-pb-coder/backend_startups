@@ -22,3 +22,12 @@ import_data.py
 # Arquivos do Alembic
 
 .alembic_cache/
+
+
+
+# Ignorar arquivos de upload
+
+static/uploads/
+
+# ignorar 'static' inteira:
+# /static/
