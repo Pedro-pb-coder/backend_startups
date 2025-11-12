@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from typing import Optional
 from . import models, schemas, security # Importamos security para o hashing
 
 # --- Funções CRUD para Empresa ---
@@ -10,12 +11,16 @@ def get_empresa(db: Session, empresa_id: int):
     """
     return db.query(models.Empresa).filter(models.Empresa.id == empresa_id).first()
 
-def get_all_empresas(db: Session, skip: int = 0, limit: int = 100):
+def get_all_empresas(db: Session,  skip: int = 0, limit: Optional[int] = None):
     """
     Busca todas as empresas
 
     """
-    return db.query(models.Empresa).offset(skip).limit(limit).all()
+    #return db.query(models.Empresa).offset(skip).limit(limit).all()
+    query = db.query(models.Empresa).offset(skip)
+    if limit:
+        query = query.limit(limit)
+    return query.all()
 
 def update_empresa_link(db: Session, empresa_id: int, link: str):
     """
