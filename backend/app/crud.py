@@ -34,23 +34,27 @@ def update_empresa_link(db: Session, empresa_id: int, link: str):
         db.refresh(db_empresa)
     return db_empresa
 
-def update_empresa_midia(db: Session, db_empresa: models.Empresa, midia_data: schemas.EmpresaMidiaUpdate) -> models.Empresa:
-    """
-    Atualiza campos de mídia de uma empresa. 
-    SERA O NOVO ACESSO DO DB USADO NO NOVO ROUTER
-
-    """
-    # Converte o schema Pydantic para um dicionário,
-    # incluindo apenas os valores que foram realmente enviados (exclude_unset=True)
-    update_data = midia_data.model_dump(exclude_unset=True)
-    
-    # Itera sobre o dicionário e atualiza o objeto do SQLAlchemy
-    for key, value in update_data.items():
-        setattr(db_empresa, key, value)
-        
+def update_empresa_link_apresentacao(db: Session, db_empresa: models.Empresa, link: Optional[str]):
+    """Atualiza o link_apresentacao de uma empresa."""
+    db_empresa.link_apresentacao = link
     db.commit()
     db.refresh(db_empresa)
     return db_empresa
+
+def update_empresa_link_video(db: Session, db_empresa: models.Empresa, link: Optional[str]):
+    """Atualiza o link_video de uma empresa."""
+    db_empresa.link_video = link
+    db.commit()
+    db.refresh(db_empresa)
+    return db_empresa
+
+def update_empresa_telefone_contato(db: Session, db_empresa: models.Empresa, telefone: Optional[str]):
+    """Atualiza o telefone_contato de uma empresa."""
+    db_empresa.telefone_contato = telefone
+    db.commit()
+    db.refresh(db_empresa)
+    return db_empresa
+
 
 
 

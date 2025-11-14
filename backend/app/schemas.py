@@ -112,32 +112,43 @@ class Empresa(BaseModel):
     @field_validator('link_apresentacao')
     def validate_presentation_link(cls, v):
         """Valida apresentação (.pdf, .ppt, .pptx, GDrive, OneDrive)."""
+
         if v is None:
-            return v  # Permite valores nulos
+            return v
 
         v_lower = v.lower()
+        # 1. Checar extensões de arquivo permitidas
+        allowed_extensions = ['.pdf', '.ppt', '.pptx']
 
-        # 1. Se não for extensão, checar se é uma URL de nuvem válida
+        if any(v_lower.endswith(ext) for ext in allowed_extensions):
+
+            try:
+                AnyHttpUrl(v)
+                return v
+            except Exception:
+
+                 raise ValueError('O link da apresentação deve ser uma URL válida')
+
+        # 2. Se não for extensão, checar se é uma URL de nuvem válida
+
         try:
             url = AnyHttpUrl(v)
+
             host = url.host or ""
             allowed_domains = ['drive.google.com', 'onedrive.live.com']
             
             if any(domain in host for domain in allowed_domains):
+
                 return v
         except Exception:
-            # Não é uma URL válida, e também não termina com a extensão correta
-            pass 
-    
-            # 2. Checar extensões de arquivo permitidas
-        allowed_extensions = ['.pdf', '.ppt', '.pptx']
-        if any(v_lower.endswith(ext) for ext in allowed_extensions):
-            return v
+            # Se falhar a validação da URL, cai no raise abaixo
 
+            pass 
+        
         # 3. Se não passou em nenhum, falha
         raise ValueError('O link da apresentação deve ser um .pdf, .ppt, .pptx, Google Drive ou OneDrive')
 
-    model_config = ConfigDict(from_attributes=True)
+
 
 
 # ---para os novos endpoints de editar os dados de links pelo id ---
@@ -150,24 +161,32 @@ class EmpresaMidiaResponse(BaseModel):
     
     model_config = ConfigDict(from_attributes=True)
 
-class EmpresaMidiaUpdate(BaseModel):
-    """Schema para POST /empresa/{id}/midia (aceita estes campos opcionais)"""
+
+    
+class SchemaLinkApresentacaoUpdate(BaseModel):
+    """Schema para POST /empresa/{id}/apresentacao"""
     link_apresentacao: Optional[str] = None
+    
+    @field_validator('link_apresentacao')
+    def validate_presentation_link(cls, v):
+        # Reutiliza o validador principal
+        return Empresa.validate_presentation_link(v)
+
+class SchemaLinkVideoUpdate(BaseModel):
+    """Schema para POST /empresa/{id}/video"""
     link_video: Optional[str] = None
-    telefone_contato: Optional[str] = None
-    
-    # Reutilizar os validadores no Pydantic v2 no Empresa
-    
-    @field_validator('telefone_contato')
-    def validate_telefone(cls, v):
-        # Chama o validador estático da classe Empresa
-        return Empresa.validate_telefone(v)
 
     @field_validator('link_video')
     def validate_video_url(cls, v):
+        # Reutiliza o validador principal
         return Empresa.validate_video_url(v)
 
-    @field_validator('link_apresentacao')
-    def validate_presentation_link(cls, v):
-        return Empresa.validate_presentation_link(v)
+class SchemaTelefoneUpdate(BaseModel):
+    """Schema para POST /empresa/{id}/telefone"""
+    telefone_contato: Optional[str] = None
+    
+    @field_validator('telefone_contato')
+    def validate_telefone(cls, v):
+        # Reutiliza o validador principal
+        return Empresa.validate_telefone(v)
     

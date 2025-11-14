@@ -31,23 +31,56 @@ def get_empresa_midia_links(
     return db_empresa
 
 
-@router.post("/{empresa_id}/midia", response_model=schemas.EmpresaMidiaResponse)
-def update_empresa_midia_links(
+@router.post("/{empresa_id}/apresentacao", response_model=schemas.EmpresaMidiaResponse)
+def update_empresa_apresentacao(
     empresa_id: int,
-    midia_data: schemas.EmpresaMidiaUpdate, # <-- Usa o novo schema de validação
+    data: schemas.SchemaLinkApresentacaoUpdate,
     db: Session = Depends(get_db)
-    
     # current_user: schemas.User = Depends(get_current_user)
 ):
     """
-    Atualiza os links de mídia e/ou telefone de uma empresa.
-    são validados no schemas.
+    Atualiza APENAS o link de apresentação de uma empresa.
+    O link é validado pelo schema.
     """
     db_empresa = crud.get_empresa(db, empresa_id=empresa_id)
     if not db_empresa:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Empresa não encontrada")
     
-    # A função crud fará a atualização parcial
-    updated_empresa = crud.update_empresa_midia(db, db_empresa=db_empresa, midia_data=midia_data)
+    updated_empresa = crud.update_empresa_link_apresentacao(db, db_empresa=db_empresa, link=data.link_apresentacao)
+    return updated_empresa
+
+@router.post("/{empresa_id}/video", response_model=schemas.EmpresaMidiaResponse)
+def update_empresa_video(
+    empresa_id: int,
+    data: schemas.SchemaLinkVideoUpdate,
+    db: Session = Depends(get_db)
+    # current_user: schemas.User = Depends(get_current_user)
+):
+    """
+    Atualiza APENAS o link de vídeo de uma empresa.
+    O link é validado pelo schema.
+    """
+    db_empresa = crud.get_empresa(db, empresa_id=empresa_id)
+    if not db_empresa:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Empresa não encontrada")
     
+    updated_empresa = crud.update_empresa_link_video(db, db_empresa=db_empresa, link=data.link_video)
+    return updated_empresa
+
+@router.post("/{empresa_id}/telefone", response_model=schemas.EmpresaMidiaResponse)
+def update_empresa_telefone(
+    empresa_id: int,
+    data: schemas.SchemaTelefoneUpdate,
+    db: Session = Depends(get_db)
+    # current_user: schemas.User = Depends(get_current_user)
+):
+    """
+    Atualiza APENAS o telefone de contato de uma empresa.
+    O telefone é validado pelo schema.
+    """
+    db_empresa = crud.get_empresa(db, empresa_id=empresa_id)
+    if not db_empresa:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Empresa não encontrada")
+    
+    updated_empresa = crud.update_empresa_telefone_contato(db, db_empresa=db_empresa, telefone=data.telefone_contato)
     return updated_empresa
