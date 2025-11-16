@@ -46,6 +46,19 @@ search_engine_instance: Optional[SearchEngine] = None
 async def lifespan(app: FastAPI):
     global search_engine_instance
     
+    # --- CORREÇÃO: INVERSÃO DE LÓGICA ---
+    # Bloco 1: CRIAR as tabelas primeiro.
+    # ligar ao DB 
+    print("Iniciando a criação das tabelas do banco de dados...")
+    try:
+        table_registry.metadata.create_all(bind=engine)
+        print("Banco de dados e tabelas criadas com sucesso!")
+    except Exception as e:
+        print(f"Erro na criação das tabelas do BD: {e}")
+        # Se isto falhar (ex: má conexão), a app não deve arrancar.
+        raise RuntimeError(f"Falha na criação das tabelas: {e}")
+        
+    # Bloco 2: LER as tabelas (agora que existem) para o NLTK.
     print("Verificando e baixando recursos do NLTK...")
     try:
         nltk.download('punkt', quiet=True) 
@@ -57,22 +70,20 @@ async def lifespan(app: FastAPI):
 
         # USANDO CRUD
         all_companies_list = crud.get_all_empresas(db)
-        #all_companies_list = db.query(models.Empresa).all()
+        
+        # (Agora 'all_companies_list' será uma lista vazia [] caso não exista antes, 
+        # o que está correto)
         
         if all_companies_list:
             search_engine_instance = SearchEngine(all_companies_list)
             print("Índice TF-IDF criado com sucesso!")
+        else:
+            print("Banco de dados vazio, SearchEngine iniciado sem dados.")
         
     except Exception as e:
         print(f"Erro na inicialização do NLTK/TF-IDF: {e}")
         raise RuntimeError(f"Falha na inicialização: {e}")
-
-    print("Iniciando a criação das tabelas do banco de dados...")
-    try:
-        table_registry.metadata.create_all(bind=engine)
-        print("Banco de dados e tabelas criadas com sucesso!")
-    except Exception as e:
-        print(f"Erro na criação das tabelas do BD: {e}")
+    # --- FIM DA CORREÇÃO ---
         
     yield
     print("Aplicação encerrada.")
