@@ -133,5 +133,4 @@ def test_optimized_search_logic_metrics(case: Dict[str, Any]):
         f"Precision baixa ({precision:.2f}). Esperado >= {MIN_PRECISION}."
     )
     assert recall >= MIN_RECALL, (
-        f"Recall baixo ({recall:.2f}). Esperado >= {MIN_RECALL}."
-    )
+        f"Recall baixo ({recall:.2f}). Esperado >= {MIN_RECALL}.")
