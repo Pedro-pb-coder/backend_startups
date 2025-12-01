@@ -117,6 +117,7 @@ class SearchEngine:
             
             final_score = (score * 200) + (name_fuzzy_score * 1.5) + (context_fuzzy_score * 0.5)
 
+            # metodo anterior 
             #tf_idf_weighted = score * 400
             #fuzzy_bonus = context_fuzzy_score * 0.50 
             #final_score = tf_idf_weighted + fuzzy_bonus
