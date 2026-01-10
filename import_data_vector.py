@@ -100,7 +100,7 @@ def setup_and_import(csv_file_path, dbname, user, password, host, port, table_na
         print(f"\nErro crítico: {e}")
     finally:
         engine.dispose()
-
+"""
 if __name__ == "__main__":
     DB_NAME = "startups_db"
     DB_USER = "startups"
@@ -114,9 +114,20 @@ if __name__ == "__main__":
     #import_csv_to_postgres(CSV_FILE, DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, TABLE_NAME)
     setup_and_import(CSV_FILE, DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, TABLE_NAME)
     #"""
-''''
+
+# atualizar db online dp Render 
+
+
 if __name__ == "__main__":
-    # Exemplo de uso (Ajuste os valores conforme seu ambiente)
-    # setup_and_import('caminho/para/seu.csv', 'startups_db', 'startups', 'senha', 'localhost', '5432', 'startups')
-    pass
-'''''
+    DB_NAME = "startups_db_4x73"
+    DB_USER = "startups_db_4x73_user"
+    DB_PASSWORD = "BSNOSW6a7yceaLlepdiWibIGrTc6zrRF"
+    DB_HOST = "dpg-d4cgsjfdiees7393sdc0-a.oregon-postgres.render.com"
+    DB_PORT = "5432"
+
+    CSV_FILE = "startups_data.csv"
+    TABLE_NAME = "startups"
+
+    setup_and_import(CSV_FILE, DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, TABLE_NAME)
+
+    
